@@ -1,7 +1,7 @@
 Package: getLattes
 Type: Package
 Title: Import and Process Data from the 'Lattes' Curriculum Platform
-Version: 0.1.0
+Version: 0.1.1
 Authors@R: 
     c(person(given = "Roney",
              family = "Fraga Souza",
@@ -26,8 +26,8 @@ Imports: XML, utils, dplyr, tibble, pipeR, rlang, rlist, stringr,
         stringi
 Depends: R (>= 3.5.0)
 NeedsCompilation: no
-Packaged: 2020-06-07 10:41:19 UTC; roney
+Packaged: 2020-06-12 14:28:10 UTC; roney
 Author: Roney Fraga Souza [aut, cre] (<https://orcid.org/0000-0001-5750-489X>),
   Winicius Sabino [aut]
 Repository: CRAN
-Date/Publication: 2020-06-12 08:10:06 UTC
+Date/Publication: 2020-06-14 16:10:05 UTC

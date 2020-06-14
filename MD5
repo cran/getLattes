@@ -1,6 +1,6 @@
-117006b1a8abf4ac20926f3241fa6314 *DESCRIPTION
+38f539fd2558320703e2ac7ab285adfe *DESCRIPTION
 11df844a40d23a7bfc4dc41ee27906c1 *NAMESPACE
-6e38522518b6c2ff88e924abeb8b9c5a *NEWS.md
+f7a8c4ab5124232180d3f50737745fe0 *NEWS.md
 df016c9b6b1ff269a1bd46e746b66c31 *R/datasets.R
 4ee968a5677a7e5538868658743a19d0 *R/getApresentacaoTrabalho.R
 2792952e11ec68cced1807e3fa1e2198 *R/getAreasAtuacao.R
@@ -40,12 +40,13 @@ e536177453b23da90ff80057b34083b4 *R/getTrabalhosEventos.R
 39e419ca6ab951c870946c7aa4e05715 *R/readLattes.R
 69f77b3e782f4c0a84edd9f56e307bfb *R/unzipLattes.R
 69ffa162be470f113b6fce03764bd6b1 *R/utils.R
-8b86df2c826eac7ae1b18fb14e853f7d *README.md
+ddfa41b7c0b9073352536ecfcba1a847 *README.md
 6d47599b81de4de9d62b69a130638162 *build/vignette.rds
 a80a740111b3b33d084f1cfe3dd85bf4 *data/xmlsLattes.rda
+631ba355079582fbf6913b930625bbc0 *inst/CITATION
 a9760c9cac11fa9dab440b279da43c5d *inst/doc/introduction_getLattes.R
 23fb8215cc7e5532c00e0deab6bb1290 *inst/doc/introduction_getLattes.Rmd
-6dc066b2e2ef4a0d46f0921be1098677 *inst/doc/introduction_getLattes.html
+0b61690784d945a7d8cba240866efbd3 *inst/doc/introduction_getLattes.html
 a98c5947be81e46dd29ba06abb87b0e8 *man/figures/README-pressure-1.png
 0153e18e8c39e2f52bb07b6d83912d13 *man/getApresentacaoTrabalho.Rd
 bb86e47b2e35bdffa3a8bf9444d884e9 *man/getAreasAtuacao.Rd
