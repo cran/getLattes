@@ -1,31 +1,35 @@
 #' @title getDadosGerais
-#' @description Extract General Data from XML file converted to R list.
-#' @param curriculo XML exported from Lattes imported to R as list.
+#' @description Extract General Data from 'Lattes' XML file.
+#' @param curriculo 'Lattes' XML imported as `xml2::read_xml()`.
 #' @return data frame 
 #' @details Curriculum without this information will return NULL. 
 #' @examples 
-#' if(interactive()){
-#'  data(xmlsLattes)
+#' if(interactive()) {
+#'  
 #'  # to import from one curriculum 
-#'  getDadosGerais(xmlsLattes[[2]])
-#'
-#'  # to import from two or more curricula
-#'  lt <- lapply(xmlsLattes, getDadosGerais)
-#'  head(bind_rows(lt))
+#'  # curriculo <- xml2::read_xml('file.xml')
+#'  # getDadosGerais(curriculo)
+#'  
 #'  }
+#' @seealso 
+#'  \code{\link[xml2]{xml_find_all}},\code{\link[xml2]{xml_attr}}
+#'  \code{\link[dplyr]{bind}},\code{\link[dplyr]{mutate}}
+#'  \code{\link[janitor]{clean_names}}
 #' @rdname getDadosGerais
 #' @export 
-#' @importFrom dplyr mutate_if
-getDadosGerais <- function(curriculo){
-    #print(curriculo$id)
-    ll <- curriculo$`DADOS-GERAIS`
-    if(any('NOME-COMPLETO' %in% names(ll$.attrs))){
-        if(length(ll)>1){
-            dados.gerais <- getCharacter(ll$.attrs)
-            dados.gerais$id <- curriculo$id
-            dados.gerais$data.atualizacao <- curriculo$.attrs[['DATA-ATUALIZACAO']]
-            dados.gerais <- mutate_if(dados.gerais, is.factor, as.character)
-        } else { dados.gerais <- NULL }
-    } else { dados.gerais <- NULL }
-    return(dados.gerais)
+#' @importFrom xml2 xml_find_all xml_attrs
+#' @importFrom dplyr bind_rows mutate
+#' @importFrom janitor clean_names
+getDadosGerais <- function(curriculo) {
+
+    if (!any(class(curriculo) == 'xml_document')) {
+        stop("The input file must be XML, imported from `xml2` package.", call. = FALSE)
+    }
+
+    xml2::xml_find_all(curriculo, ".//DADOS-GERAIS") |>
+        xml2::xml_attrs() |>
+        dplyr::bind_rows() |>
+        janitor::clean_names() |>
+        dplyr::mutate(id = getId(curriculo)) 
+
 }

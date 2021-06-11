@@ -1,31 +1,35 @@
 #' @title getEnderecoProfissional
-#' @description Extract Profissional Address from XML file converted to R list.
-#' @param curriculo XML exported from Lattes imported to R as list.
+#' @description Extract Profissional Address from 'Lattes' XML file.
+#' @param curriculo 'Lattes' XML imported as `xml2::read_xml()`.
 #' @return data frame 
 #' @details Curriculum without this information will return NULL. 
 #' @examples 
-#' if(interactive()){
-#'  data(xmlsLattes)
+#' if(interactive()) {
+#'  
 #'  # to import from one curriculum 
-#'  getEnderecoProfissional(xmlsLattes[[2]])
-#'
-#'  # to import from two or more curricula
-#'  lt <- lapply(xmlsLattes, getEnderecoProfissional)
-#'  head(bind_rows(lt))
+#'  # curriculo <- xml2::read_xml('file.xml')
+#'  # getEnderecoProfissional(curriculo)
+#'  
 #'  }
+#' @seealso 
+#'  \code{\link[xml2]{xml_find_all}},\code{\link[xml2]{xml_attr}}
+#'  \code{\link[dplyr]{bind}},\code{\link[dplyr]{mutate}}
+#'  \code{\link[janitor]{clean_names}}
 #' @rdname getEnderecoProfissional
 #' @export 
-getEnderecoProfissional <- function(curriculo){
-  #print(curriculo$id)
-  ll <- curriculo$`DADOS-GERAIS`$ENDERECO
-  if(any('ENDERECO-PROFISSIONAL' %in% names(ll))){
-    ll <- ll$`ENDERECO-PROFISSIONAL`
-    if(length(ll)>1){
-      endereco <- as.data.frame(t(ll))
-      names(endereco) <- tolower(gsub('-','\\.', names(endereco)))
-      endereco$id <- curriculo$id
-    } else { endereco <- NULL }
-    return(endereco)
-  } else { endereco <- NULL }
-  return(endereco)
+#' @importFrom xml2 xml_find_all xml_attrs
+#' @importFrom dplyr bind_rows mutate
+#' @importFrom janitor clean_names
+getEnderecoProfissional <- function(curriculo) {
+
+    if (!any(class(curriculo) == 'xml_document')) {
+        stop("The input file must be XML, imported from `xml2` package.", call. = FALSE)
+    }
+
+    xml2::xml_find_all(curriculo, ".//ENDERECO-PROFISSIONAL") |>
+        xml2::xml_attrs() |>
+        dplyr::bind_rows() |>
+        janitor::clean_names() |>
+        dplyr::mutate(id = getId(curriculo))
 }
+

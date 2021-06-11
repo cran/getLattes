@@ -1,39 +1,39 @@
 #' @title getIdiomas
-#' @description Extract Languages from XML file converted to R list.
-#' @param curriculo XML exported from Lattes imported to R as list.
+#' @description Extract Languages from 'Lattes' XML file. 
+#' @param curriculo 'Lattes' XML imported as `xml2::read_xml()`.
 #' @return data frame 
 #' @details Curriculum without this information will return NULL. 
 #' @examples 
-#' if(interactive()){
-#'  data(xmlsLattes)
+#' if(interactive()) {
+#'  
 #'  # to import from one curriculum 
-#'  getIdiomas(xmlsLattes[[2]])
-#'
-#'  # to import from two or more curricula
-#'  lt <- lapply(xmlsLattes, getIdiomas)
-#'  head(bind_rows(lt))
+#'  # curriculo <- xml2::read_xml('file.xml')
+#'  # getIdiomas(curriculo)
+#'  
 #'  }
+#' @seealso 
+#'  \code{\link[xml2]{xml_find_all}},\code{\link[xml2]{xml_children}},\code{\link[xml2]{xml_attr}}
+#'  \code{\link[purrr]{map}}
+#'  \code{\link[dplyr]{bind}},\code{\link[dplyr]{mutate}}
+#'  \code{\link[janitor]{clean_names}}
 #' @rdname getIdiomas
 #' @export 
-getIdiomas <- function(curriculo){
-  #print(curriculo$id)
-  ll <- curriculo$`DADOS-GERAIS`
-  if(is.list(ll)){
-    if(any(names(ll) %in% 'IDIOMAS')){
+#' @importFrom xml2 xml_find_all xml_children xml_attrs
+#' @importFrom purrr map
+#' @importFrom dplyr bind_rows mutate
+#' @importFrom janitor clean_names
+getIdiomas <- function(curriculo) {
 
-      ll <- ll$`IDIOMAS`
-
-      if(length(ll) >=1){
-        idm <- lapply(ll, function(x){ if(!is.null(x)){ getCharacter(x)} } )
-        idm <- bind_rows(idm)
-      }
-      idm$id <- curriculo$id
-      return(idm)
+    if (!any(class(curriculo) == 'xml_document')) {
+        stop("The input file must be XML, imported from `xml2` package.", call. = FALSE)
     }
-    idm <- NULL
-    return(idm)
-  } else{
-    idm <- NULL
-    return(idm)
-  }
+
+    xml2::xml_find_all(curriculo, ".//IDIOMAS") |>
+        purrr::map(~ xml2::xml_children(.)) |>
+        purrr::map(~ xml2::xml_attrs(.)) |>
+        purrr::map(~ dplyr::bind_rows(.)) |>
+        purrr::map(~ janitor::clean_names(.)) |>
+        dplyr::bind_rows() |>
+        dplyr::mutate(id = getId(curriculo)) 
+
 }

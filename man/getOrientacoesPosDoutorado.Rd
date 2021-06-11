@@ -7,25 +7,29 @@
 getOrientacoesPosDoutorado(curriculo)
 }
 \arguments{
-\item{curriculo}{XML exported from Lattes imported to R as list.}
+\item{curriculo}{'Lattes' XML imported as `xml2::read_xml()`.}
 }
 \value{
 data frame
 }
 \description{
-Extract Academic Advisory (Post-Doctorate) from XML file converted to R list.
+Extract Academic Advisory (Post-Doctorate) from 'Lattes' XML file.
 }
 \details{
 Curriculum without this information will return NULL.
 }
 \examples{
 if(interactive()){
- data(xmlsLattes)
+ 
  # to import from one curriculum 
- getOrientacoesPosDoutorado(xmlsLattes[[2]])
-
- # to import from two or more curricula
- lt <- lapply(xmlsLattes, getOrientacoesPosDoutorado)
- head(bind_rows(lt))
+ # curriculo <- xml2::read_xml('file.xml')
+ # getOrientacoesPosDoutorado(curriculo)
+ 
  }
+}
+\seealso{
+\code{\link[xml2]{xml_find_all}},\code{\link[xml2]{xml_attr}}
+ \code{\link[purrr]{map}},\code{\link[purrr]{map2}}
+ \code{\link[dplyr]{bind}},\code{\link[dplyr]{mutate}}
+ \code{\link[janitor]{clean_names}}
 }

@@ -1,72 +1,47 @@
 #' @title getAtuacoesProfissionais
-#' @description Extract profissional links from XML file converted to R list.
-#' @param curriculo XML exported from Lattes imported to R as list.
+#' @description Extract profissional links from 'Lattes' XML file.
+#' @param curriculo 'Lattes' XML imported as `xml2::read_xml()`.
 #' @return data frame 
 #' @details Curriculum without this information will return NULL. 
 #' @examples 
-#' if(interactive()){
-#'  data(xmlsLattes)
-#'  # to import from one curriculum 
-#'  getAtuacoesProfissionais(xmlsLattes[[2]])
+#' if(interactive()) {
 #'
-#'  # to import from two or more curricula
-#'  lt <- lapply(xmlsLattes, getAtuacoesProfissionais)
-#'  head(bind_rows(lt))
+#'  # to import from one curriculum 
+#'  # curriculo <- xml2::read_xml('file.xml')
+#'  # getAtuacoesProfissionais(curriculo)
+#'
 #'  }
+#' @seealso 
+#'  \code{\link[xml2]{xml_find_all}},\code{\link[xml2]{xml_attr}}
+#'  \code{\link[purrr]{map}},\code{\link[purrr]{map2}}
+#'  \code{\link[dplyr]{bind}},\code{\link[dplyr]{mutate}}
+#'  \code{\link[janitor]{clean_names}}
 #' @rdname getAtuacoesProfissionais
 #' @export 
-#' @importFrom stringr str_c
-getAtuacoesProfissionais <- function(curriculo){
-  #print(curriculo$id)
-  ll <- curriculo$`DADOS-GERAIS`
-  if(any( names(ll) %in% 'ATUACOES-PROFISSIONAIS')){
+#' @importFrom xml2 xml_find_all xml_attrs
+#' @importFrom purrr map map2
+#' @importFrom dplyr bind_rows bind_cols mutate
+#' @importFrom janitor clean_names
+getAtuacoesProfissionais <- function(curriculo) {
 
-    ll2 <- ll$`ATUACOES-PROFISSIONAIS`
-    qtde <- length(ll2)
-
-    if(qtde!=0){
-
-      if(qtde==1){
-
-        attrs <- if(!any(names(ll2) %in% '.attrs') & any(names(ll2[[1]]) %in% '.attrs')){
-          getCharacter(ll2[[1]][['.attrs']])
-        } else{
-          getCharacter(ll2[[1]])
-        }
-        atv <- names(ll2[[1]])
-        atv <- str_c(atv, collapse=',')
-        atv <- gsub(',.attrs', '', atv)
-        atv <- tolower(gsub('-','\\.', atv))
-        attrs$vinculos <- atv
-      }
-
-      if(qtde>1){
-
-        attrs <- lapply(ll2, function(x){
-          if(any(names(x) %in% '.attrs')){
-            getCharacter(x[['.attrs']])
-          } else{
-            getCharacter(x)
-          }
-        })
-
-        attrs <- bind_rows(attrs)
-        atv <- lapply(ll2, names)
-        atv <- lapply(atv, function(x){ str_c(x, collapse=',')})
-        atv <- lapply(atv, function(x){ gsub(',.attrs', '', x) })
-        atv <- lapply(atv, function(x){ tolower(gsub('-','\\.', x))})
-        atv <- unlist(atv)
-        attrs$atividades <- atv
-      }
-      attrs$id <- curriculo$id
-      return(attrs)
-
-    } else{
-      attrs <- NULL
-      return(attrs)
+    if (!any(class(curriculo) == 'xml_document')) {
+        stop("The input file must be XML, imported from `xml2` package.", call. = FALSE)
     }
-  } else{
-    attrs <- NULL
-    return(attrs)
-  }
+
+    dados_basicos <- 
+        xml2::xml_find_all(curriculo, ".//ATUACOES-PROFISSIONAIS/ATUACAO-PROFISSIONAL") |>
+        purrr::map(~ xml2::xml_attrs(.)) |>
+        purrr::map(~ dplyr::bind_rows(.)) |>
+        purrr::map(~ janitor::clean_names(.)) 
+
+    detalhamento <- 
+        xml2::xml_find_all(curriculo, ".//ATUACOES-PROFISSIONAIS/ATUACAO-PROFISSIONAL") |>
+        purrr::map(~ xml2::xml_find_all(., ".//VINCULOS")) |>
+        purrr::map(~ xml2::xml_attrs(.)) |>
+        purrr::map(~ dplyr::bind_rows(.)) |>
+        purrr::map(~ janitor::clean_names(.)) 
+
+    purrr::map2(dados_basicos, detalhamento, dplyr::bind_cols) |>
+        dplyr::bind_rows() |>
+        dplyr::mutate(id = getId(curriculo)) 
 }

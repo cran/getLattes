@@ -5,8 +5,9 @@ knitr::opts_chunk$set(
 )
 
 ## ----eval=F-------------------------------------------------------------------
+#  
 #  # install and load devtools from CRAN
-#  install.packages("devtools")
+#  # install.packages("devtools")
 #  library(devtools)
 #  
 #  # install and load getLattes
@@ -16,138 +17,131 @@ knitr::opts_chunk$set(
 library(getLattes)
 
 # support packages
+library(xml2)
 library(dplyr)
 library(tibble)
-library(pipeR)
+library(purrr)
 
-## ----eval=F, echo=F-----------------------------------------------------------
-#  # delete '*.xml$' in datatet
-#  # setwd('~/OneDrive/Rworkspace/getLattes/datatest')
-#  # file.remove(list.files(pattern='*.xml$'))
-#  # setwd('~/OneDrive/Rworkspace/getLattes')
+## ----eval = F, echo = F, include=F--------------------------------------------
+#  # esse executo para testar meu código
+#  # o próximo chunk é só para aparecer o código no html
+#  curriculo <- xml2::read_xml('inst/extdata/4984859173592703.zip')
 
-## ----eval=F, warning=FALSE, message=FALSE-------------------------------------
-#  
-#  # the zip file(s) (is)are stored in datatest/
-#  # unzipLattes(filezip='2854855744345507.zip', path='datatest/')
-#  # unzipLattes(filezip='*.zip', path='datatest/')
-#  
-#  # the zip files are stored in the working directory
-#  unzipLattes(filezip='*.zip')
+## ----eval=T, include=T--------------------------------------------------------
+curriculo <- xml2::read_xml('../inst/extdata/4984859173592703.zip')
 
-## ----eval=F, include=T--------------------------------------------------------
-#  
-#  # the file 4984859173592703.xml
-#  # cl <- readLattes(filexml='4984859173592703.xml', path='datatest/')
-#  
-#  # import several files
-#  # cls <- readLattes(filexml='*.xml$', path='datatest/')
-#  
-#  # import xml files from working directory
-#  cls <- readLattes(filexml='*.xml$')
+## ----eval=F-------------------------------------------------------------------
+#  getDadosGerais(curriculo)
+#  getArtigosPublicados(curriculo)
+#  getAreasAtuacao(curriculo)
+#  getArtigosPublicados(curriculo)
+#  getAtuacoesProfissionais(curriculo)
+#  getBancasDoutorado(curriculo)
+#  getBancasGraduacao(curriculo)
+#  getBancasMestrado(curriculo)
+#  getCapitulosLivros(curriculo)
+#  getDadosGerais(curriculo)
+#  getEnderecoProfissional(curriculo)
+#  getEventosCongressos(curriculo)
+#  getFormacaoDoutorado(curriculo)
+#  getFormacaoMestrado(curriculo)
+#  getFormacaoGraduacao(curriculo)
+#  getIdiomas(curriculo)
+#  getLinhaPesquisa(curriculo)
+#  getLivrosPublicados(curriculo)
+#  getOrganizacaoEventos(curriculo)
+#  getOrientacoesDoutorado(curriculo)
+#  getOrientacoesMestrado(curriculo)
+#  getOrientacoesPosDoutorado(curriculo)
+#  getOutrasProducoesTecnicas(curriculo)
+#  getParticipacaoProjeto(curriculo)
+#  getProducaoTecnica(curriculo)
+#  getId(curriculo)
 
-## ----eval=T-------------------------------------------------------------------
-data(xmlsLattes)
-length(xmlsLattes)
-names(xmlsLattes[[1]])
-
-## ----eval=T, warning=FALSE, message=FALSE-------------------------------------
-# to import from one curriculum 
-getDadosGerais(xmlsLattes[[1]])
-
-## ----eval=T, warning=FALSE, message=FALSE-------------------------------------
-lt <- lapply(xmlsLattes, getDadosGerais) 
-lt <- bind_rows(lt)
-glimpse(lt)
-
-## ----eval=T, warning=FALSE, message=FALSE-------------------------------------
-lapply(xmlsLattes, getDadosGerais) %>>% 
-    bind_rows %>>% 
-    glimpse
-
-## ----eval=T-------------------------------------------------------------------
-lapply(xmlsLattes, getDadosGerais) %>>% 
-    bind_rows %>>% 
-    (. -> res)
-
-glimpse(res)
+## ----eval = F, echo = F, include=F--------------------------------------------
+#  # esse executo para testar meu código
+#  # o próximo chunk é só para aparecer o código no html
+#  files <- list.files(path = 'inst/extdata/', pattern = '*.xml|*.zip', full.names = T)
+#  system.file("extdata", "4984859173592703.zip", package = "getLattes")
 
 ## ----eval=T, warning=FALSE, message=FALSE-------------------------------------
-lapply(xmlsLattes, getOrientacoesDoutorado) %>>% 
-    bind_rows %>>% 
-    glimpse()
+files <- list.files(path = '../inst/extdata/', pattern = '*.xml|*.zip', full.names = T)
 
 ## ----eval=T, warning=FALSE, message=FALSE-------------------------------------
-lapply(xmlsLattes, getOrientacoesMestrado) %>>% 
-    bind_rows %>>% 
-    glimpse()
+curriculos <- lapply(files, read_xml)
 
 ## ----eval=T, warning=FALSE, message=FALSE-------------------------------------
-lapply(xmlsLattes, getOrientacoesPosDoutorado) %>>% 
-    bind_rows %>>% 
-    glimpse()
+curriculos <- 
+    purrr::map(files, safely(read_xml)) |> 
+    purrr::map(pluck, 'result') 
 
 ## ----eval=T, warning=FALSE, message=FALSE-------------------------------------
-lapply(xmlsLattes, getOrientacoesOutras) %>>% 
-    bind_rows %>>% 
-    glimpse()
+dados_gerais <- 
+    purrr::map(curriculos, safely(getDadosGerais)) |>
+    purrr::map(pluck, 'result') 
 
-## ----eval=T, warning=FALSE, message=FALSE-------------------------------------
-lapply(xmlsLattes, getArtigosPublicados) %>>% 
-    bind_rows %>>% 
-    as_tibble %>>% 
-    (. -> pub)
-
-glimpse(pub)
-
-## ----eval=T, warning=FALSE, message=FALSE-------------------------------------
-# use explict arguments
-normalizeByDoi( pub, doi='doi', year='ano.do.artigo', issn='issn', paperTitle='titulo.do.artigo', journalName='titulo.do.periodico.ou.revista')
-
-# use de defult data frame from getArtigosPublicados
-normalizeByDoi(pub)
-
-## ----eval=T, warning=FALSE, message=FALSE-------------------------------------
-# use explict arguments
-nj <- normalizeJournals(pub, issn='issn', journalName='titulo.do.periodico.ou.revista')
-
-# use de defult data frame from getArtigosPublicados
-nj <- normalizeJournals(pub)
-
-nj %>>% 
-    select(issn_old, issn, titulo.do.periodico.ou.revista_old, titulo.do.periodico.ou.revista) %>>% 
-    tail
+dados_gerais
 
 ## ----eval=T, warning=FALSE, message=FALSE-------------------------------------
 
-# use explict arguments
-ny <- normalizeYears(pub, year2normalize='ano.do.artigo',issn='issn',journalName='titulo.do.periodico.ou.revista',paperTitle='titulo.do.artigo')
+dados_gerais <- 
+    purrr::map(curriculos, safely(getDadosGerais)) |>
+    purrr::map(pluck, 'result') |>
+    dplyr::bind_rows() 
 
-# use de defult variables names from getArtigosPublicados
-ny <- normalizeYears(pub)
-
-ny %>>% 
-    select(ano_old, ano, issn, titulo.do.periodico.ou.revista, titulo.do.artigo) %>>% 
-    head
+glimpse(dados_gerais)
 
 ## ----eval=T, warning=FALSE, message=FALSE-------------------------------------
-lapply(xmlsLattes, getArtigosPublicados) %>>% 
-    bind_rows %>>% 
-    as_tibble %>>% 
-    normalizeByDoi %>>% 
-    normalizeJournals %>>% 
-    normalizeYears %>>% 
-    select(titulo.do.artigo,ano.do.artigo,issn,titulo.do.periodico.ou.revista,id) %>>% 
-    slice(1:10)
+artigos_publicados <- 
+    purrr::map(curriculos, safely(getArtigosPublicados)) |>
+    purrr::map(pluck, 'result') |>
+    dplyr::bind_rows() 
+
+artigos_publicados |>
+    dplyr::arrange(desc(ano_do_artigo)) |>
+    dplyr::select(titulo_do_artigo, ano_do_artigo, titulo_do_periodico_ou_revista) 
+
+livros_publicados <- 
+    purrr::map(curriculos, safely(getLivrosPublicados)) |>
+    purrr::map(pluck, 'result') |>
+    dplyr::bind_rows() 
+
+capitulos_livros <- 
+    purrr::map(curriculos, safely(getCapitulosLivros)) |>
+    purrr::map(pluck, 'result') |>
+    dplyr::bind_rows() 
 
 ## ----eval=T, warning=FALSE, message=FALSE-------------------------------------
-lapply(xmlsLattes, getArtigosPublicados) %>>% 
-    bind_rows %>>% 
-    as_tibble %>>% 
-    normalizeByDoi %>>% 
-    normalizeJournals %>>% 
-    normalizeYears %>>% 
-    select(titulo.do.artigo,ano.do.artigo,issn,titulo.do.periodico.ou.revista,id) %>>% 
-    left_join( lapply(xmlsLattes, getDadosGerais) %>>% bind_rows %>>% select(id,nome.completo,pais.de.nascimento)) %>>%   
-    slice(1:10)
+
+artigos_publicados2 <- 
+    dplyr::group_by(artigos_publicados, id) |>
+    dplyr::tally(name = 'artigos') 
+
+artigos_publicados2
+
+livros_publicados2 <- 
+    dplyr::group_by(livros_publicados, id) |>
+    dplyr::tally(name = 'livros') 
+
+livros_publicados2
+
+capitulos_livros2 <- 
+    dplyr::group_by(capitulos_livros, id) |>
+    dplyr::tally(name = 'capitulos') 
+
+capitulos_livros2
+
+## ----eval=T, warning=FALSE, message=FALSE-------------------------------------
+
+artigos_publicados2 |>
+    dplyr::left_join(livros_publicados2) |>
+    dplyr::left_join(capitulos_livros2)
+
+## ----eval=T, warning=FALSE, message=FALSE-------------------------------------
+
+artigos_publicados2 |>
+    dplyr::left_join(livros_publicados2) |>
+    dplyr::left_join(capitulos_livros2) |>
+    dplyr::left_join(dados_gerais |> dplyr::select(id, nome_completo)) |>
+    dplyr::select(nome_completo, artigos, livros, capitulos) 
 

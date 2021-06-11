@@ -1,103 +1,61 @@
 #' @title getArtigosPublicados
-#' @description Extract published papers from XML file converted to R list.
-#' @param curriculo XML exported from Lattes imported to R as list.
+#' @description Extract published papers from 'Lattes' XML file. 
+#' @param curriculo 'Lattes' XML imported as `xml2::read_xml()`.
 #' @return data frame 
 #' @details Curriculum without this information will return NULL. 
 #' @examples 
-#' if(interactive()){
-#'  data(xmlsLattes)
+#' if(interactive()) {
+#' 
 #'  # to import from one curriculum 
-#'  getArtigosPublicados(xmlsLattes[[2]])
+#'  # curriculo <- xml2::read_xml('file.xml')
+#'  # getArtigosPublicados(curriculo)
 #'
-#'  # to import from two or more curricula
-#'  lt <- lapply(xmlsLattes, getArtigosPublicados)
-#'  head(bind_rows(lt))
 #'  }
+#' @seealso 
+#'  \code{\link[xml2]{xml_find_all}},\code{\link[xml2]{xml_attr}}
+#'  \code{\link[purrr]{map}},\code{\link[purrr]{map2}}
+#'  \code{\link[dplyr]{bind}},\code{\link[dplyr]{mutate}}
+#'  \code{\link[janitor]{clean_names}}
+#'  \code{\link[tibble]{tibble}}
 #' @rdname getArtigosPublicados
 #' @export 
-getArtigosPublicados <- function(curriculo){
-  #print(curriculo$id)
-  lista = curriculo
-  nm <- names(lista)
-  if(any( nm %in% 'PRODUCAO-BIBLIOGRAFICA')){
-    ll2 <- lista$`PRODUCAO-BIBLIOGRAFICA`
-    nmll2 <- names(ll2)
-    if(any( nmll2 %in% 'ARTIGOS-PUBLICADOS' )){
-      ll2 <- ll2$`ARTIGOS-PUBLICADOS`
-      nmll2 <- names(ll2)
-      tnmll2 <- length(ll2)
-      if(tnmll2 > 0){
-        nomeVariavel <- names(table(unlist(nmll2)))
-        for (y in 1:length(nomeVariavel)){
-          g <-  which(names(ll2) == nomeVariavel[y] )
+#' @importFrom xml2 xml_find_all xml_attrs
+#' @importFrom purrr map map2 pmap
+#' @importFrom dplyr bind_rows bind_cols mutate
+#' @importFrom janitor clean_names
+getArtigosPublicados <- function(curriculo) {
 
-          ll3 <- lapply(g, function(x){
+    if (!any(class(curriculo) == 'xml_document')) {
+        stop("The input file must be XML, imported from `xml2` package.", call. = FALSE)
+    }
 
-            ll4 <- bind_cols( getCharacter(ll2[[x]]$`DADOS-BASICOS-DO-ARTIGO`),
-                              if(any( names(ll2[[x]]) %in% 'DETALHAMENTO-DO-ARTIGO') ){
-                                if(length(ll2[[x]]$`DETALHAMENTO-DO-ARTIGO`) != 0){
-                                  getCharacter(ll2[[x]]$`DETALHAMENTO-DO-ARTIGO`)
-                                }
-                              }
-            )
+    dados_basicos <- 
+        curriculo |>
+            xml2::xml_find_all(".//ARTIGO-PUBLICADO") |> 
+            purrr::map(~ xml2::xml_find_all(., ".//DADOS-BASICOS-DO-ARTIGO")) |>
+            purrr::map(~ xml2::xml_attrs(.)) |>
+            purrr::map(~ dplyr::bind_rows(.)) |>
+            purrr::map(~ janitor::clean_names(.)) 
 
-            a <- which(names(ll2[[x]]) == "AUTORES" )
+    detalhamento <- 
+        curriculo |>
+            xml2::xml_find_all(".//ARTIGO-PUBLICADO") |>
+            purrr::map(~ xml2::xml_find_all(., ".//DETALHAMENTO-DO-ARTIGO")) |>
+            purrr::map(~ xml2::xml_attrs(.)) |>
+            purrr::map(~ dplyr::bind_rows(.)) |>
+            purrr::map(~ janitor::clean_names(.)) 
 
-            autores <- lapply(a, function(z){ getCharacter(ll2[[x]][[z]])  })
+    autores <- 
+        curriculo |> 
+            xml2::xml_find_all(".//ARTIGO-PUBLICADO") |>
+            purrr::map(~ xml2::xml_find_all(., ".//AUTORES")) |>
+            purrr::map(~ xml2::xml_attrs(.)) |>
+            purrr::map(~ dplyr::bind_rows(.)) |>
+            purrr::map(~ janitor::clean_names(.)) 
 
-            autores1 <- data.frame(autores = "", autores.citacoes ="", autores.id="")
+    a <- purrr::map2(dados_basicos, detalhamento, dplyr::bind_cols) 
 
-            for(i in 1:length(autores)){
-              if (i == 1){
-                autores1$autores <- paste0(autores[[i]]$nome.completo.do.autor)
-                autores1$autores.citacoes<- paste0(autores[[i]]$nome.para.citacao)
-                if (any(names(autores[[i]]) %in% "nro.id.cnpq")){
-                  if (autores[[i]]$nro.id.cnpq == ""){
-                    autores1$autores.id <- paste0("No.id")
-                  }else{
-                    autores1$autores.id <- paste0(autores[[i]]$nro.id.cnpq)
-                  }
-                }else{
-                  autores1$autores.id <- paste0("No.id")
-                }
-              }else{
-                autores1$autores <- paste0(autores1$autores, "; " , autores[[i]]$nome.completo.do.autor)
-                autores1$autores.citacoes <- paste0(autores1$autores.citacoes, "/ " , autores[[i]]$nome.para.citacao)
-                if (any(names(autores[[i]]) %in% "nro.id.cnpq")){
-                  if (autores[[i]]$nro.id.cnpq == ""){
-                    autores1$autores.id <- paste0(autores1$autores.id, "; " , "No.id")
-                  }else{
-                    autores1$autores.id <- paste0(autores1$autores.id, "; " , autores[[i]]$nro.id.cnpq)
-                  }
-                }else{
-                  autores1$autores.id <- paste0(autores1$autores.id, "; " , "No.id")
-                }
-              }
-            }
-
-            id1 <-  getCharacter(curriculo$id)
-            names(id1) <- "id"
-
-            ll6 <- bind_cols(ll4, autores1, id1)
-
-          })
-
-          if(length(ll3) > 1 || length(g)  == 1 ){
-            ll3 <- bind_rows(ll3)
-          }
-
-        } #FIM FOR NOME VARIAVEIS
-        return(ll3)
-      }else{
-        ll3 <- NULL
-        return(ll3)
-      }
-    }else{
-      ll3 <- NULL
-      return(ll3)
-    } #AQUI
-  }else{
-    ll3 <- NULL
-    return(ll3)
-  }
+    purrr::pmap(list(a, autores), function(x, y) tibble::tibble(x, autores = list(y))) |>
+        dplyr::bind_rows() |>
+        dplyr::mutate(id = getId(curriculo)) 
 }

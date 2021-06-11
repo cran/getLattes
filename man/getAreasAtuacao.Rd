@@ -7,25 +7,28 @@
 getAreasAtuacao(curriculo)
 }
 \arguments{
-\item{curriculo}{XML exported from Lattes imported to R as list.}
+\item{curriculo}{'Lattes' XML imported as `xml2::read_xml()`.}
 }
 \value{
 data frame
 }
 \description{
-Extract Research Area from XML file converted to R list.
+Extract Research Area from 'Lattes' XML file.
 }
 \details{
 Curriculum without this information will return NULL.
 }
 \examples{
-if(interactive()){
- data(xmlsLattes)
+if(interactive()) {
+ 
  # to import from one curriculum 
- getAreasAtuacao(xmlsLattes[[2]])
+ # curriculo <- xml2::read_xml('file.xml')
+ # getAreasAtuacao(curriculo)
 
- # to import from two or more curricula
- lt <- lapply(xmlsLattes, getAreasAtuacao)
- head(bind_rows(lt))
  }
+}
+\seealso{
+\code{\link[xml2]{xml_find_all}},\code{\link[xml2]{xml_attr}}
+ \code{\link[dplyr]{bind}},\code{\link[dplyr]{mutate}}
+ \code{\link[janitor]{clean_names}}
 }

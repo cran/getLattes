@@ -1,70 +1,48 @@
 #' @title getOrientacoesPosDoutorado
-#' @description Extract Academic Advisory (Post-Doctorate) from XML file converted to R list.
-#' @param curriculo XML exported from Lattes imported to R as list.
+#' @description Extract Academic Advisory (Post-Doctorate) from 'Lattes' XML file. 
+#' @param curriculo 'Lattes' XML imported as `xml2::read_xml()`.
 #' @return data frame 
 #' @details Curriculum without this information will return NULL. 
 #' @examples 
 #' if(interactive()){
-#'  data(xmlsLattes)
+#'  
 #'  # to import from one curriculum 
-#'  getOrientacoesPosDoutorado(xmlsLattes[[2]])
-#'
-#'  # to import from two or more curricula
-#'  lt <- lapply(xmlsLattes, getOrientacoesPosDoutorado)
-#'  head(bind_rows(lt))
+#'  # curriculo <- xml2::read_xml('file.xml')
+#'  # getOrientacoesPosDoutorado(curriculo)
+#'  
 #'  }
+#' @seealso 
+#'  \code{\link[xml2]{xml_find_all}},\code{\link[xml2]{xml_attr}}
+#'  \code{\link[purrr]{map}},\code{\link[purrr]{map2}}
+#'  \code{\link[dplyr]{bind}},\code{\link[dplyr]{mutate}}
+#'  \code{\link[janitor]{clean_names}}
 #' @rdname getOrientacoesPosDoutorado
 #' @export 
-getOrientacoesPosDoutorado <- function(curriculo){
+#' @importFrom xml2 xml_find_all xml_attrs
+#' @importFrom purrr map map2
+#' @importFrom dplyr bind_rows bind_cols mutate
+#' @importFrom janitor clean_names
+getOrientacoesPosDoutorado <- function(curriculo) {
 
-  #print(curriculo$id)
+    if (!any(class(curriculo) == 'xml_document')) {
+        stop("The input file must be XML, imported from `xml2` package.", call. = FALSE)
+    }
 
-  ll <- curriculo$`OUTRA-PRODUCAO`
-  nm <- names(ll)
-  encontro <- FALSE
+    dados_basicos <- 
+        xml2::xml_find_all(curriculo, ".//ORIENTACOES-CONCLUIDAS-PARA-POS-DOUTORADO") |>
+        purrr::map(~ xml2::xml_find_all(., ".//DADOS-BASICOS-DE-ORIENTACOES-CONCLUIDAS-PARA-POS-DOUTORADO")) |>
+        purrr::map(~ xml2::xml_attrs(.)) |>
+        purrr::map(~ dplyr::bind_rows(.)) |>
+        purrr::map(~ janitor::clean_names(.)) 
 
-  if(any( nm %in% 'ORIENTACOES-CONCLUIDAS')){
-    ll2 <- ll$`ORIENTACOES-CONCLUIDAS`
-    nmll2 <- names(ll2)
-    if(any( nmll2 %in% 'ORIENTACOES-CONCLUIDAS-PARA-POS-DOUTORADO')){
+    detalhamento <- 
+        xml2::xml_find_all(curriculo, ".//ORIENTACOES-CONCLUIDAS-PARA-POS-DOUTORADO") |>
+        purrr::map(~ xml2::xml_find_all(., ".//DETALHAMENTO-DE-ORIENTACOES-CONCLUIDAS-PARA-POS-DOUTORADO")) |>
+        purrr::map(~ xml2::xml_attrs(.)) |>
+        purrr::map(~ dplyr::bind_rows(.)) |>
+        purrr::map(~ janitor::clean_names(.)) 
 
-      tnmll2 <- length(ll2)
-      if(tnmll2 > 0){
-        testelista <- list()
-
-        ll3 <- lapply(ll2, function(x){
-
-          if(any( names(x) %in% 'DADOS-BASICOS-DE-ORIENTACOES-CONCLUIDAS-PARA-POS-DOUTORADO')){
-
-            ll4 <- bind_cols(getCharacter(x$`DADOS-BASICOS-DE-ORIENTACOES-CONCLUIDAS-PARA-POS-DOUTORADO`),
-                             if(any(names(x) %in% 'DETALHAMENTO-DE-ORIENTACOES-CONCLUIDAS-PARA-POS-DOUTORADO')){
-                               if(length(x$`DETALHAMENTO-DE-ORIENTACOES-CONCLUIDAS-PARA-POS-DOUTORADO`) != 0){
-                                 getCharacter(x$`DETALHAMENTO-DE-ORIENTACOES-CONCLUIDAS-PARA-POS-DOUTORADO`)
-                               }
-                             }
-            )
-
-            id1 <-  getCharacter(curriculo$id)
-            names(id1) <- "id"
-            ll6 <- bind_cols(ll4,id1)
-
-          }
-        })
-
-        if(length(ll3) > 1 || length(ll3)  == 1  ){
-          ll3 <- bind_rows(ll3)
-        }
-
-      }
-
-      return(ll3)
-
-    }else{
-      ll3 <- NULL
-      return(ll3)
-    } #AQUI
-  }else{
-    ll3 <- NULL
-    return(ll3)
-  }
+    purrr::map2(dados_basicos, detalhamento, dplyr::bind_cols) |>
+        dplyr::bind_rows() |>
+        dplyr::mutate(id = getId(curriculo)) 
 }
