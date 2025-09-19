@@ -1,3 +1,9 @@
+# getLattes 1.0.0
+
+Version 0.3.0
+===
+Added `getLattesWeb`, `getArtigosAceitos`, `writePublicationsRis`.
+
 Version 0.2.0
 ===
 Complete update. I started to use `xml2`, `purrr` approach.

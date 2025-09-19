@@ -1,17 +1,19 @@
-## ---- include = FALSE---------------------------------------------------------
+## ----include = FALSE----------------------------------------------------------
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
 )
 
 ## ----eval=F-------------------------------------------------------------------
-#  
-#  # install and load devtools from CRAN
-#  # install.packages("devtools")
-#  library(devtools)
-#  
-#  # install and load getLattes
-#  devtools::install_github("roneyfraga/getLattes")
+# # install and load devtools from CRAN
+# # install.packages("devtools")
+# library(devtools)
+# 
+# # install and load getLattes
+# devtools::install_github("roneyfraga/getLattes")
+
+## ----eval=F, include=T--------------------------------------------------------
+# install.packages('getLattes')
 
 ## ----eval=T, warning=FALSE, message=FALSE-------------------------------------
 library(getLattes)
@@ -22,57 +24,52 @@ library(dplyr)
 library(tibble)
 library(purrr)
 
-## ----eval = F, echo = F, include=F--------------------------------------------
-#  # esse executo para testar meu código
-#  # o próximo chunk é só para aparecer o código no html
-#  curriculo <- xml2::read_xml('inst/extdata/4984859173592703.zip')
-
 ## ----eval=T, include=T--------------------------------------------------------
-curriculo <- xml2::read_xml('../inst/extdata/4984859173592703.zip')
+# find the file in system
+zip_xml <- system.file('extdata/4984859173592703.zip', package = 'getLattes')
+
+curriculo <- xml2::read_xml(zip_xml)
 
 ## ----eval=F-------------------------------------------------------------------
-#  getDadosGerais(curriculo)
-#  getArtigosPublicados(curriculo)
-#  getAreasAtuacao(curriculo)
-#  getArtigosPublicados(curriculo)
-#  getAtuacoesProfissionais(curriculo)
-#  getBancasDoutorado(curriculo)
-#  getBancasGraduacao(curriculo)
-#  getBancasMestrado(curriculo)
-#  getCapitulosLivros(curriculo)
-#  getDadosGerais(curriculo)
-#  getEnderecoProfissional(curriculo)
-#  getEventosCongressos(curriculo)
-#  getFormacaoDoutorado(curriculo)
-#  getFormacaoMestrado(curriculo)
-#  getFormacaoGraduacao(curriculo)
-#  getIdiomas(curriculo)
-#  getLinhaPesquisa(curriculo)
-#  getLivrosPublicados(curriculo)
-#  getOrganizacaoEventos(curriculo)
-#  getOrientacoesDoutorado(curriculo)
-#  getOrientacoesMestrado(curriculo)
-#  getOrientacoesPosDoutorado(curriculo)
-#  getOutrasProducoesTecnicas(curriculo)
-#  getParticipacaoProjeto(curriculo)
-#  getProducaoTecnica(curriculo)
-#  getId(curriculo)
-
-## ----eval = F, echo = F, include=F--------------------------------------------
-#  # esse executo para testar meu código
-#  # o próximo chunk é só para aparecer o código no html
-#  files <- list.files(path = 'inst/extdata/', pattern = '*.xml|*.zip', full.names = T)
-#  system.file("extdata", "4984859173592703.zip", package = "getLattes")
+# getDadosGerais(curriculo)
+# getAreasAtuacao(curriculo)
+# getArtigosPublicados(curriculo)
+# getAtuacoesProfissionais(curriculo)
+# getBancasDoutorado(curriculo)
+# getBancasGraduacao(curriculo)
+# getBancasMestrado(curriculo)
+# getCapitulosLivros(curriculo)
+# getDadosGerais(curriculo)
+# getEnderecoProfissional(curriculo)
+# getEventosCongressos(curriculo)
+# getFormacaoDoutorado(curriculo)
+# getFormacaoGraduacao(curriculo)
+# getFormacaoMestrado(curriculo)
+# getIdiomas(curriculo)
+# getLinhaPesquisa(curriculo)
+# getLivrosPublicados(curriculo)
+# getOrganizacaoEventos(curriculo)
+# getOrientacoesDoutorado(curriculo)
+# getOrientacoesMestrado(curriculo)
+# getOrientacoesPosDoutorado(curriculo)
+# getOutrasProducoesTecnicas(curriculo)
+# getParticipacaoProjeto(curriculo)
+# getPatentes()
+# getProducaoTecnica(curriculo)
+# getTrabalhosEmEventos()
+# getId(curriculo)
 
 ## ----eval=T, warning=FALSE, message=FALSE-------------------------------------
-files <- list.files(path = '../inst/extdata/', pattern = '*.xml|*.zip', full.names = T)
+# find the files in system
+zips_xmls <- c(system.file('extdata/4984859173592703.zip', package = 'getLattes'),
+               system.file('extdata/3051627641386529.zip', package = 'getLattes'))
 
 ## ----eval=T, warning=FALSE, message=FALSE-------------------------------------
-curriculos <- lapply(files, read_xml)
+curriculos <- lapply(zips_xmls, read_xml)
 
 ## ----eval=T, warning=FALSE, message=FALSE-------------------------------------
 curriculos <- 
-    purrr::map(files, safely(read_xml)) |> 
+    purrr::map(zips_xmls, safely(read_xml)) |> 
     purrr::map(pluck, 'result') 
 
 ## ----eval=T, warning=FALSE, message=FALSE-------------------------------------
@@ -144,4 +141,32 @@ artigos_publicados2 |>
     dplyr::left_join(capitulos_livros2) |>
     dplyr::left_join(dados_gerais |> dplyr::select(id, nome_completo)) |>
     dplyr::select(nome_completo, artigos, livros, capitulos) 
+
+## ----eval=F, echo=T, warning=FALSE, message=FALSE-----------------------------
+# 
+# writePublicationsRis(artigos_publicados,
+#                      filename = '~/Desktop/artigos_nome_citacao.ris',
+#                      citationName = T,
+#                      append = F,
+#                      tableLattes = 'ArtigosPublicados')
+# 
+# # full author name, ex: Antonio Marcio Buainain
+# writePublicationsRis(artigos_publicados,
+#                      filename = '~/Desktop/artigos_nome_completo.ris',
+#                      citationName = F,
+#                      append = F,
+#                      tableLattes = 'ArtigosPublicados')
+# 
+# writePublicationsRis(livros_publicados,
+#                filename = '~/Desktop/livros.ris',
+#                append = F,
+#                citationName = T,
+#                tableLattes = 'Livros')
+# 
+# writePublicationsRis(capitulos_livros,
+#                      filename = '~/Desktop/capitulos_livros.ris',
+#                      append = T,
+#                      citationName = F,
+#                      tableLattes = 'CapitulosLivros')
+# 
 

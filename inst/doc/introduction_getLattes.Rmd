@@ -33,6 +33,7 @@ The main information contained in `XML` files, and imported via `getLattes`, are
 
 - Research Area `getAreasAtuacao()`  
 - Published Papers `getArtigosPublicados()`  
+- Accepted Papers `getArtigosAceitos()`  
 - Profissional Links `getAtuacoesProfissionais()`  
 - Ph.D. Examination Board's `getBancasDoutorado()`  
 - Undergraduate Examination Board's `getBancasGraduacao()`  
@@ -55,6 +56,7 @@ The main information contained in `XML` files, and imported via `getLattes`, are
 - Participation in Projects `getParticipacaoProjeto()`  
 - Technical Production `getProducaoTecnica()`  
 - Patents `getPatentes()`  
+- Patents `getTrabalhosEmEventos()`  
 - Personal Lattes 16 digits identification `getId()`  
 
 From the functionalities presented in this package, the main challenge to work with the Lattes curriculum data is now to download the data, as there are Captchas. To download a lot of curricula I suggest the use of [Captchas Negated by Python reQuests - CNPQ](https://github.com/josefson/CNPQ). The second barrier to be overcome is the management and processing of a large volume of data, the whole Lattes platform in `XML` files totals over 200 GB. In this tutorial we will focus on the `getLattes` package features, being the reader responsible for download and manage the files.
@@ -63,18 +65,32 @@ Follow an example of how to search and download data from the [Lattes](http://la
 
 ![](http://roneyfraga.com/volume/keep_it/lattes_busca_curriculo.gif)
 
+## getLattesWeb
+
+Alternative for no-coders:
+
+- link 1 [https://roneyfraga.shinyapps.io/getlattesweb/](https://roneyfraga.shinyapps.io/getlattesweb/)
+- link 2 [http://roneyfraga.com/shiny/getLattesWeb/](http://roneyfraga.com/getLattesWeb/)
+
+![](http://roneyfraga.com/volume/keep_it/getLattesWeb_exemplo.gif)
+
 ## Installation
 
-To install the released version of getLattes from [github](https://CRAN.R-project.org).
+To install the newest released version of getLattes from [github](https://CRAN.R-project.org).
 
 ```{r eval=F}
-
 # install and load devtools from CRAN
 # install.packages("devtools")
 library(devtools)
 
 # install and load getLattes
 devtools::install_github("roneyfraga/getLattes")
+```
+
+Stable version from [CRAN](https://cran.r-project.org/).
+
+```{r eval=F, include=T}
+install.packages('getLattes')
 ```
 
 Load `getLattes`.
@@ -95,21 +111,17 @@ library(purrr)
 
 Using the `get*` functions to import data from a single curriculum is straightforward. The curriculum need to be imported into `R` by the `read_xml()` function from the `xml2` package. 
 
-```{r eval = F, echo = F, include=F}
-# esse executo para testar meu código
-# o próximo chunk é só para aparecer o código no html
-curriculo <- xml2::read_xml('inst/extdata/4984859173592703.zip')
-```
-
 ```{r eval=T, include=T}
-curriculo <- xml2::read_xml('../inst/extdata/4984859173592703.zip')
+# find the file in system
+zip_xml <- system.file('extdata/4984859173592703.zip', package = 'getLattes')
+
+curriculo <- xml2::read_xml(zip_xml)
 ```
 
 ### `get` functions
 
 ```{r eval=F}
 getDadosGerais(curriculo)
-getArtigosPublicados(curriculo)
 getAreasAtuacao(curriculo)
 getArtigosPublicados(curriculo)
 getAtuacoesProfissionais(curriculo)
@@ -121,8 +133,8 @@ getDadosGerais(curriculo)
 getEnderecoProfissional(curriculo)
 getEventosCongressos(curriculo)
 getFormacaoDoutorado(curriculo)
-getFormacaoMestrado(curriculo)
 getFormacaoGraduacao(curriculo)
+getFormacaoMestrado(curriculo)
 getIdiomas(curriculo)
 getLinhaPesquisa(curriculo)
 getLivrosPublicados(curriculo)
@@ -132,7 +144,9 @@ getOrientacoesMestrado(curriculo)
 getOrientacoesPosDoutorado(curriculo)
 getOutrasProducoesTecnicas(curriculo)
 getParticipacaoProjeto(curriculo)
+getPatentes()
 getProducaoTecnica(curriculo)
+getTrabalhosEmEventos()
 getId(curriculo)
 ```
 
@@ -140,23 +154,18 @@ getId(curriculo)
 
 ### Import
 
-To import data from two or more curricula it is easier to use `list.files()`, a native R function, or `dir_ls()` from `fs` package. As `xml2::read_xml()` allow to read a `xml` curriculum inside a `zip` files, we can insert both options in `pattern` argument.
-
-```{r eval = F, echo = F, include=F}
-# esse executo para testar meu código
-# o próximo chunk é só para aparecer o código no html
-files <- list.files(path = 'inst/extdata/', pattern = '*.xml|*.zip', full.names = T)
-system.file("extdata", "4984859173592703.zip", package = "getLattes")
-```
+To import data from two or more curricula it is easier to use `list.files()`, a native R function, or `dir_ls()` from `fs` package. As `xml2::read_xml()` allow to read a `xml` curriculum inside a `zip` files.
 
 ```{r eval=T, warning=FALSE, message=FALSE}
-files <- list.files(path = '../inst/extdata/', pattern = '*.xml|*.zip', full.names = T)
+# find the files in system
+zips_xmls <- c(system.file('extdata/4984859173592703.zip', package = 'getLattes'),
+               system.file('extdata/3051627641386529.zip', package = 'getLattes'))
 ```
 
 Import the listed curricula to R memory as `xml2::read_xml` object.
 
 ```{r eval=T, warning=FALSE, message=FALSE}
-curriculos <- lapply(files, read_xml)
+curriculos <- lapply(zips_xmls, read_xml)
 ```
 
 The `lapply()` function is a well-known and widely used alternative in the `R` world. However, it does not natively handle errors, which makes the `map` function from the `purrr` package an excellent alternative. 
@@ -165,7 +174,7 @@ Adding an extra layer of complexity, I will use pipe `|>`. Programming using the
 
 ```{r eval=T, warning=FALSE, message=FALSE}
 curriculos <- 
-    purrr::map(files, safely(read_xml)) |> 
+    purrr::map(zips_xmls, safely(read_xml)) |> 
     purrr::map(pluck, 'result') 
 ```
 
@@ -263,5 +272,36 @@ artigos_publicados2 |>
     dplyr::left_join(capitulos_livros2) |>
     dplyr::left_join(dados_gerais |> dplyr::select(id, nome_completo)) |>
     dplyr::select(nome_completo, artigos, livros, capitulos) 
+```
+
+## Export to RIS format
+
+```{r eval=F, echo=T, warning=FALSE, message=FALSE}
+
+writePublicationsRis(artigos_publicados, 
+                     filename = '~/Desktop/artigos_nome_citacao.ris', 
+                     citationName = T, 
+                     append = F, 
+                     tableLattes = 'ArtigosPublicados')
+
+# full author name, ex: Antonio Marcio Buainain
+writePublicationsRis(artigos_publicados, 
+                     filename = '~/Desktop/artigos_nome_completo.ris', 
+                     citationName = F, 
+                     append = F,
+                     tableLattes = 'ArtigosPublicados')
+
+writePublicationsRis(livros_publicados, 
+               filename = '~/Desktop/livros.ris', 
+               append = F, 
+               citationName = T, 
+               tableLattes = 'Livros')
+
+writePublicationsRis(capitulos_livros, 
+                     filename = '~/Desktop/capitulos_livros.ris', 
+                     append = T,
+                     citationName = F, 
+                     tableLattes = 'CapitulosLivros')
+
 ```
 
